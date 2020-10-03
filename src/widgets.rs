@@ -3,19 +3,19 @@ use druid::lens::{self, LensExt};
 use druid::widget::{Button, Container, Flex, Label, List, Painter, Parse, Scroll, TextBox};
 use druid::{Env, RenderContext, Widget, WidgetExt};
 
-use crate::states::{WorkedMonth, WorkerStateMonth};
+use crate::states::{WorkerStateMonth, WorkData, Name};
 use crate::theme;
 
-pub fn ui_builder() -> impl Widget<WorkedMonth> {
+pub fn ui_builder() -> impl Widget<WorkData> {
     let month_label =
-        Label::new(|data: &WorkedMonth, _env: &Env| data.month.format("%B %Y").to_string());
+        Label::new(|data: &WorkData, _env: &Env| data.current_date.format("%B %Y").to_string());
 
     let list = Scroll::new(List::new(|| {
         Flex::column()
             .with_child(Flex::row().with_child(side_buttons()).with_child(
                 ui_worker_state_month().lens(lens::Id.map(
-                    |d: &(Vector<WorkerStateMonth>, WorkerStateMonth)| d.1.clone(),
-                    |d: &mut (Vector<WorkerStateMonth>, WorkerStateMonth), v: WorkerStateMonth| {
+                    |d: &(Vector<(Name, WorkerStateMonth)>, (Name, WorkerStateMonth))| d.1.clone(),
+                    |d: &mut (Vector<(Name, WorkerStateMonth)>, (Name, WorkerStateMonth)), v: (Name, WorkerStateMonth)| {
                         d.0.set(d.0.index_of(&d.1).unwrap(), v.clone());
                         d.1 = v;
                     },
@@ -24,9 +24,13 @@ pub fn ui_builder() -> impl Widget<WorkedMonth> {
             .with_spacer(theme::SPACER_SIZE)
     }))
     .lens(lens::Id.map(
-        |d: &WorkedMonth| (d.workers.clone(), d.workers.clone()),
-        |d: &mut WorkedMonth, x: (Vector<WorkerStateMonth>, Vector<WorkerStateMonth>)| {
-            d.workers = x.0
+        |d: &WorkData| {
+            let data = d.get_from_month(*d.current_date);
+            (data.clone(), data.clone())
+
+        },
+        |d: &mut WorkData, x: (Vector<(Name, WorkerStateMonth)>, Vector<(Name, WorkerStateMonth)>)| {
+            x.0.iter().for_each(|v| d.insert(*d.current_date, v.0.clone(), v.1.clone()));
         },
     ));
 
@@ -35,10 +39,10 @@ pub fn ui_builder() -> impl Widget<WorkedMonth> {
     return layout;
 }
 
-fn side_buttons() -> impl Widget<(Vector<WorkerStateMonth>, WorkerStateMonth)> {
+fn side_buttons() -> impl Widget<(Vector<(Name, WorkerStateMonth)>, (Name, WorkerStateMonth))> {
     Flex::column()
-        .with_child(Button::new("▲").on_click(
-            |_, (shared, item): &mut (Vector<WorkerStateMonth>, WorkerStateMonth), _| {
+/*        .with_child(Button::new("▲").on_click(
+            |_, (shared, item): &mut (Vector<(Name, WorkerStateMonth)>, (Name, WorkerStateMonth)), _| {
                 let index = shared.index_of(item);
                 if index.is_some() && index.unwrap() != 0 {
                     shared.swap(index.unwrap(), index.unwrap()-1);
@@ -46,41 +50,49 @@ fn side_buttons() -> impl Widget<(Vector<WorkerStateMonth>, WorkerStateMonth)> {
                 println!("Moving up {:?}", item)
             },
         ))
-        .with_child(Button::new("-").on_click(
-            |_, (shared, item): &mut (Vector<WorkerStateMonth>, WorkerStateMonth), _| {
+*/        .with_child(Button::new("-").on_click(
+            |_, (shared, item): &mut (Vector<(Name, WorkerStateMonth)>, (Name, WorkerStateMonth)), _| {
                 shared.retain(|v| v != item);
                 println!("Deleting {:?}", item)
             },
         ))
-        .with_child(Button::new("▼").on_click(
-            |_, (shared, item): &mut (Vector<WorkerStateMonth>, WorkerStateMonth), _| {
+/*        .with_child(Button::new("▼").on_click(
+            |_, (shared, item): &mut (Vector<(Name, WorkerStateMonth)>, (Name, WorkerStateMonth)), _| {
                 // shared.retain(|v| v != item);
                 let index = shared.index_of(item);
                 if index.is_some() && index.unwrap() != shared.len()-1 {
                     shared.swap(index.unwrap(), index.unwrap()+1);
                 }
                 println!("Moving down {:?}", item)
-            },
-        ))
+            },*/
+        //))
 }
 
-fn ui_worker_state_month() -> impl Widget<WorkerStateMonth> {
-    let name_label = Label::new(|data: &WorkerStateMonth, _env: &Env| {
-        format!("{} {}", data.name.0, data.name.1)
+fn ui_worker_state_month() -> impl Widget<(Name, WorkerStateMonth)> {
+    let name_label = Label::new(|data: &Name, _env: &Env| {
+        format!("{} {}", data.0, data.1)
     })
     .with_text_size(20.0)
     .padding(5.0)
-    .center();
+    .center()
+    .lens(lens::Id.map(
+        |d: &(Name, WorkerStateMonth)| d.0.clone(),
+        |d: &mut (Name, WorkerStateMonth), v: Name| d.0 = v
+    ));
 
-    let painter = Painter::new(|ctx, data: &WorkerStateMonth, _env| {
+    let painter = Painter::new(|ctx, data: &(Name, WorkerStateMonth), _env| {
         let bounds = ctx.size().to_rect().inset(-theme::STROKE_WIDTH / 2.0);
         let rounded = bounds.to_rounded_rect(theme::CORNER_RADIUS);
-        if data.done {
+        if data.1.done {
             ctx.stroke(rounded, &theme::COLOR_DONE, theme::STROKE_WIDTH);
         } else {
             ctx.stroke(rounded, &theme::COLOR_NOT_DONE, theme::STROKE_WIDTH);
         }
-    });
+    })/*.lens(lens::Id.map(
+        |d: &(Name, WorkerStateMonth)| d.1,
+        |d: &mut (Name, WorkerStateMonth), v: WorkerStateMonth| d.1 = v
+
+    ))*/;
 
     let has_to_work_input = Parse::new(TextBox::new()).lens(WorkerStateMonth::has_to_work);
     let worked_input = Parse::new(TextBox::new()).lens(WorkerStateMonth::worked);
@@ -106,7 +118,11 @@ fn ui_worker_state_month() -> impl Widget<WorkerStateMonth> {
         .with_child(worked_flex)
         .with_spacer(theme::SPACER_SIZE)
         .with_child(paid_out_flex)
-        .with_spacer(theme::SPACER_SIZE);
+        .with_spacer(theme::SPACER_SIZE)
+        .lens(lens::Id.map(
+            |d: &(Name, WorkerStateMonth)| d.1.clone(),
+            |d: &mut (Name, WorkerStateMonth), v: WorkerStateMonth| d.1 = v
+        ));
 
     let all = Flex::column()
         .with_child(name_label)
