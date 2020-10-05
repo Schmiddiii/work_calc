@@ -1,8 +1,9 @@
+use druid::{Env, Widget, WidgetExt};
 use druid::im::Vector;
 use druid::lens::{self, LensExt};
-use druid::widget::{Button, Container, Flex, Label, List, Painter, Parse, Scroll, TextBox};
-use druid::{Env, RenderContext, Widget, WidgetExt};
+use druid::widget::{Button, Container, Flex, Label, List, Scroll};
 
+use crate::smallwidgets;
 use crate::states::{WorkedMonth, WorkerStateMonth};
 use crate::theme;
 
@@ -14,8 +15,8 @@ pub fn ui_builder() -> impl Widget<WorkedMonth> {
         Flex::column()
             .with_child(Flex::row().with_child(side_buttons()).with_child(
                 ui_worker_state_month().lens(lens::Id.map(
-                    |d: &(Vector<WorkerStateMonth>, WorkerStateMonth)| d.1.clone(),
-                    |d: &mut (Vector<WorkerStateMonth>, WorkerStateMonth), v: WorkerStateMonth| {
+                    |d: &(Vector<(WorkerStateMonth, Option<f32>)>, (WorkerStateMonth, Option<f32>))| d.1.clone(),
+                    |d: &mut (Vector<(WorkerStateMonth, Option<f32>)>, (WorkerStateMonth, Option<f32>)), v: (WorkerStateMonth, Option<f32>)| {
                         d.0.set(d.0.index_of(&d.1).unwrap(), v.clone());
                         d.1 = v;
                     },
@@ -23,94 +24,105 @@ pub fn ui_builder() -> impl Widget<WorkedMonth> {
             ))
             .with_spacer(theme::SPACER_SIZE)
     }))
-    .lens(lens::Id.map(
-        |d: &WorkedMonth| (d.workers.clone(), d.workers.clone()),
-        |d: &mut WorkedMonth, x: (Vector<WorkerStateMonth>, Vector<WorkerStateMonth>)| {
-            d.workers = x.0
-        },
-    ));
+        .lens(lens::Id.map(
+            |d: &WorkedMonth| {
+                let overall_with_state_previous = d.get_overall_with_state_all_previous();
+                (overall_with_state_previous.clone(), overall_with_state_previous)
+            },
+            |d: &mut WorkedMonth, x: (Vector<(WorkerStateMonth, Option<f32>)>, Vector<(WorkerStateMonth, Option<f32>)>)| {
+                d.workers = x.0.iter().map(|v| v.0.clone()).collect()
+            },
+        ));
 
     let layout = Flex::column().with_child(month_label).with_child(list);
 
     return layout;
 }
 
-fn side_buttons() -> impl Widget<(Vector<WorkerStateMonth>, WorkerStateMonth)> {
+fn side_buttons() -> impl Widget<(Vector<(WorkerStateMonth, Option<f32>)>, (WorkerStateMonth, Option<f32>))> {
     Flex::column()
         .with_child(Button::new("▲").on_click(
-            |_, (shared, item): &mut (Vector<WorkerStateMonth>, WorkerStateMonth), _| {
+            |_, (shared, item): &mut (Vector<(WorkerStateMonth, Option<f32>)>, (WorkerStateMonth, Option<f32>)), _| {
                 let index = shared.index_of(item);
                 if index.is_some() && index.unwrap() != 0 {
-                    shared.swap(index.unwrap(), index.unwrap()-1);
+                    shared.swap(index.unwrap(), index.unwrap() - 1);
                 }
-                println!("Moving up {:?}", item)
             },
         ))
         .with_child(Button::new("-").on_click(
-            |_, (shared, item): &mut (Vector<WorkerStateMonth>, WorkerStateMonth), _| {
+            |_, (shared, item): &mut (Vector<(WorkerStateMonth, Option<f32>)>, (WorkerStateMonth, Option<f32>)), _| {
                 shared.retain(|v| v != item);
-                println!("Deleting {:?}", item)
             },
         ))
         .with_child(Button::new("▼").on_click(
-            |_, (shared, item): &mut (Vector<WorkerStateMonth>, WorkerStateMonth), _| {
+            |_, (shared, item): &mut (Vector<(WorkerStateMonth, Option<f32>)>, (WorkerStateMonth, Option<f32>)), _| {
                 // shared.retain(|v| v != item);
                 let index = shared.index_of(item);
-                if index.is_some() && index.unwrap() != shared.len()-1 {
-                    shared.swap(index.unwrap(), index.unwrap()+1);
+                if index.is_some() && index.unwrap() != shared.len() - 1 {
+                    shared.swap(index.unwrap(), index.unwrap() + 1);
                 }
-                println!("Moving down {:?}", item)
             },
         ))
 }
 
-fn ui_worker_state_month() -> impl Widget<WorkerStateMonth> {
-    let name_label = Label::new(|data: &WorkerStateMonth, _env: &Env| {
-        format!("{} {}", data.name.0, data.name.1)
-    })
-    .with_text_size(20.0)
-    .padding(5.0)
-    .center();
+fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
+    let name_label = smallwidgets::build_name_label();
 
-    let painter = Painter::new(|ctx, data: &WorkerStateMonth, _env| {
-        let bounds = ctx.size().to_rect().inset(-theme::STROKE_WIDTH / 2.0);
-        let rounded = bounds.to_rounded_rect(theme::CORNER_RADIUS);
-        if data.done {
-            ctx.stroke(rounded, &theme::COLOR_DONE, theme::STROKE_WIDTH);
+    let painter = smallwidgets::build_painter();
+
+    let has_to_work_flex = smallwidgets::build_label_with_input(Label::new("Has to work"), WorkerStateMonth::has_to_work);
+    let worked_flex = smallwidgets::build_label_with_input(Label::new("Worked"), WorkerStateMonth::worked);
+    let paid_out_flex = smallwidgets::build_label_with_input(Label::new("Paid out"), WorkerStateMonth::paid_out);
+
+    let inputs = smallwidgets::build_flex_column(vec![Box::new(has_to_work_flex), Box::new(worked_flex), Box::new(paid_out_flex)])
+        .lens(lens::Id.map(
+            |d: &(WorkerStateMonth, Option<f32>)| d.0.clone(),
+            |d: &mut (WorkerStateMonth, Option<f32>), v: WorkerStateMonth| d.0 = v,
+        ));
+
+    let delta_output = Label::new(|data: &WorkerStateMonth, _env: &Env| {
+        let delta = data.get_delta();
+        if delta.is_none() {
+            "".to_string()
         } else {
-            ctx.stroke(rounded, &theme::COLOR_NOT_DONE, theme::STROKE_WIDTH);
+            format!("{}", delta.unwrap())
         }
+    }).lens(lens::Id.map(
+        |d: &(WorkerStateMonth, Option<f32>)| d.0.clone(),
+        |d: &mut (WorkerStateMonth, Option<f32>), v: WorkerStateMonth| d.0 = v,
+    ));
+
+    let delta_flex = smallwidgets::build_widget_with_label_row("Delta", delta_output);
+
+    let last_month_output = Label::new(|data: &Option<f32>, _env: &Env| {
+        if data.is_none() {
+            "".to_string()
+        } else {
+            format!("{}", data.unwrap())
+        }
+    }).lens(lens::Id.map(
+        |d: &(WorkerStateMonth, Option<f32>)| d.1.clone(),
+        |d: &mut (WorkerStateMonth, Option<f32>), v: Option<f32>| d.1 = v,
+    ));
+
+    let last_month_flex = smallwidgets::build_widget_with_label_row("Last month", last_month_output);
+
+    let overall_output = Label::new(|data: &(WorkerStateMonth, Option<f32>), _env: &Env| {
+        let delta = data.0.get_delta();
+        if delta.is_none() {
+            return "".to_string();
+        }
+        format!("{}", delta.unwrap() + data.1.unwrap_or(0.0))
     });
 
-    let has_to_work_input = Parse::new(TextBox::new()).lens(WorkerStateMonth::has_to_work);
-    let worked_input = Parse::new(TextBox::new()).lens(WorkerStateMonth::worked);
-    let paid_out_input = Parse::new(TextBox::new()).lens(WorkerStateMonth::paid_out);
+    let overall_flex = smallwidgets::build_widget_with_label_row("Overall", overall_output);
 
-    let has_to_work_flex = Flex::column()
-        .with_child(Label::new("Has to work"))
-        .with_spacer(theme::SPACER_SIZE)
-        .with_child(has_to_work_input);
-    let worked_flex = Flex::column()
-        .with_child(Label::new("Worked"))
-        .with_spacer(theme::SPACER_SIZE)
-        .with_child(worked_input);
-    let paid_out_flex = Flex::column()
-        .with_child(Label::new("Paid out"))
-        .with_spacer(theme::SPACER_SIZE)
-        .with_child(paid_out_input);
+    let worker_stats = smallwidgets::build_flex_column(vec![Box::new(inputs), Box::new(delta_flex), Box::new(last_month_flex), Box::new(overall_flex)]);
 
-    let inputs = Flex::row()
-        .with_spacer(theme::SPACER_SIZE)
-        .with_child(has_to_work_flex)
-        .with_spacer(theme::SPACER_SIZE)
-        .with_child(worked_flex)
-        .with_spacer(theme::SPACER_SIZE)
-        .with_child(paid_out_flex)
-        .with_spacer(theme::SPACER_SIZE);
 
     let all = Flex::column()
         .with_child(name_label)
-        .with_child(inputs)
+        .with_child(worker_stats)
         .with_spacer(theme::SPACER_SIZE);
 
     let container = Container::new(all).background(painter);
