@@ -1,15 +1,23 @@
 use druid::{Env, Widget, WidgetExt};
 use druid::im::Vector;
 use druid::lens::{self, LensExt};
-use druid::widget::{Button, Container, Flex, Label, List, Scroll};
+use druid::widget::{Align, Button, Container, Flex, Label, List, Scroll};
 
 use crate::smallwidgets;
-use crate::states::{WorkedMonth, WorkerStateMonth};
+use crate::states::{WorkerStateMonth, WorkData, WorkedMonth};
 use crate::theme;
 
-pub fn ui_builder() -> impl Widget<WorkedMonth> {
+pub fn ui_builder() -> impl Widget<WorkData> {
+    Flex::row()
+        .with_flex_child(Align::left(Button::new("<").on_click(|_, data: &mut WorkData, _| data.previous_month())), 1.0)
+        .with_child(Align::centered(ui_month_overview()))
+        .with_flex_child(Align::right(Button::new(">").on_click(|_, data: &mut WorkData, _| data.next_month())), 1.0)
+}
+
+
+pub fn ui_month_overview() -> impl Widget<WorkData> {
     let month_label =
-        Label::new(|data: &WorkedMonth, _env: &Env| data.month.format("%B %Y").to_string());
+        Label::new(|data: &WorkData, _env: &Env| data.months[data.index].month.format("%B %Y").to_string());
 
     let list = Scroll::new(List::new(|| {
         Flex::column()
@@ -23,18 +31,21 @@ pub fn ui_builder() -> impl Widget<WorkedMonth> {
                 )),
             ))
             .with_spacer(theme::SPACER_SIZE)
-    }))
+    })).vertical()
         .lens(lens::Id.map(
-            |d: &WorkedMonth| {
+            |d: &WorkData| {
                 let overall_with_state_previous = d.get_overall_with_state_all_previous();
                 (overall_with_state_previous.clone(), overall_with_state_previous)
             },
-            |d: &mut WorkedMonth, x: (Vector<(WorkerStateMonth, Option<f32>)>, Vector<(WorkerStateMonth, Option<f32>)>)| {
-                d.workers = x.0.iter().map(|v| v.0.clone()).collect()
+            |d: &mut WorkData, x: (Vector<(WorkerStateMonth, Option<f32>)>, Vector<(WorkerStateMonth, Option<f32>)>)| {
+                d.months[d.index].workers = x.0.iter().map(|v| v.0.clone()).collect()
             },
         ));
 
-    let layout = Flex::column().with_child(month_label).with_child(list);
+    let layout = Flex::column().with_child(month_label).with_spacer(theme::SPACER_SIZE).with_child(list).with_spacer(theme::SPACER_SIZE).with_child(smallwidgets::build_new_worker_widget().lens(lens::Id.map(
+        |d: &WorkData| d.months[d.index].clone(),
+        |d: &mut WorkData, v: WorkedMonth| d.months[d.index] = v
+    )));
 
     return layout;
 }

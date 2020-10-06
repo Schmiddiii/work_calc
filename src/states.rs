@@ -19,7 +19,7 @@ pub struct WorkerStateMonth {
 pub struct WorkedMonth {
     pub month: Arc<Date<Local>>,
     pub workers: Vector<WorkerStateMonth>,
-    pub last_month: Option<Box<WorkedMonth>>
+    pub new_worker_name: Name
 }
 
 impl Data for Box<WorkedMonth> {
@@ -28,7 +28,11 @@ impl Data for Box<WorkedMonth> {
     }
 }
 
-
+#[derive(Clone, Debug, Data, Lens, PartialEq)]
+pub struct WorkData {
+    pub months: Vector<WorkedMonth>,
+    pub index: usize
+}
 
 
 impl WorkerStateMonth {
@@ -38,65 +42,74 @@ impl WorkerStateMonth {
         }
         Some(self.worked.unwrap() - self.has_to_work.unwrap() - self.paid_out.unwrap())
     }
+
+    pub fn new(name: Name) -> WorkerStateMonth {
+        WorkerStateMonth {
+            name,
+            has_to_work: Some(0.0),
+            worked: Some(0.0),
+            paid_out: Some(0.0)
+        }
+    }
+
+    pub fn new_from_existing(&self) -> WorkerStateMonth {
+        WorkerStateMonth::new(self.name.clone())
+    }
 }
 
 impl WorkedMonth {
+
+    pub fn create_next_month(&self) -> WorkedMonth {
+        WorkedMonth {
+            month: Arc::new(Local.ymd(self.month.year() +  if self.month.month() == 12 {1} else {0}, self.month.month() % 12 + 1, 1)),
+            workers: self.workers.iter().map(|w| WorkerStateMonth::new(w.name.clone())).collect(),
+            new_worker_name: ("".to_string(), "".to_string())
+        }
+    }
+
     pub fn get_from_name(&self, name: Name) -> Option<WorkerStateMonth> {
         self.workers.clone().into_iter().find(|v| v.name == name)
     }
 
-    pub fn get_overall(&self, name: Name) -> Option<f32> {
-        let worker = self.get_from_name(name.clone());
+}
 
-        if worker.clone().is_none() || worker.clone().unwrap().get_delta().is_none() {
-            return None;
+impl WorkData {
+
+    pub fn previous_month(&mut self) {
+        if self.index > 0 {
+            self.index = self.index - 1;
         }
-        let last_month =
-        if self.last_month.is_none() || self.last_month.as_ref().unwrap().get_overall(name.clone()).is_none() {
-            0.0
-        } else {self.last_month.as_ref().unwrap().get_overall(name.clone()).unwrap()};
-
-
-        Some(worker.unwrap().get_delta().unwrap() + last_month)
     }
 
-    pub fn get_overall_previous(&self, name: Name) -> Option<f32> {
-        if self.last_month.is_none() {
-            return None;
+    pub fn next_month(&mut self) {
+        self.index = self.index + 1;
+        if self.index >= self.months.len() {
+            self.index = self.months.len();
+            if self.months.len() != 0 {
+                self.months.push_back(self.months[self.index - 1].create_next_month())
+            }
+
         }
-        self.last_month.as_ref().unwrap().get_overall(name)
     }
 
-    pub fn get_overall_with_state(&self, name: Name) -> Option<(WorkerStateMonth, Option<f32>)> {
-        let wsm = self.get_from_name(name.clone());
-        if wsm.is_none() {
-            return None;
+    pub fn get_overall_from_name_previous(&self, name: Name) -> Option<f32> {
+        let mut result = None;
+
+        let mut previous_months = self.months.clone();
+        previous_months.truncate(self.index);
+
+        for wsm in previous_months {
+            let worker = wsm.workers.iter().find(|w| w.name == name);
+            if worker.is_some() {
+                result = Some(result.unwrap_or(0.0) + worker.unwrap().get_delta().unwrap_or(0.0));
+            }
         }
 
-        return Some((wsm.unwrap(), self.get_overall(name)));
-    }
-
-
-    pub fn get_overall_with_state_previous(&self, name: Name) -> Option<(WorkerStateMonth, Option<f32>)> {
-        let wsm = self.get_from_name(name.clone());
-        if wsm.is_none() {
-            return None;
-        }
-
-        return Some((wsm.unwrap(), self.get_overall_previous(name)));
-    }
-
-    pub fn get_overall_with_state_all(&self) -> Vector<(WorkerStateMonth, Option<f32>)> {
-        let names_iter = self.workers.iter().map(|w| w.name.clone());
-
-        names_iter.map(|n| self.get_overall_with_state(n).unwrap()).collect()
-
+        return result;
     }
 
     pub fn get_overall_with_state_all_previous(&self) -> Vector<(WorkerStateMonth, Option<f32>)> {
-        let names_iter = self.workers.iter().map(|w| w.name.clone());
-
-        names_iter.map(|n| self.get_overall_with_state_previous(n).unwrap()).collect()
-
+        let current_workers = self.months[self.index].workers.clone();
+        current_workers.into_iter().map(|wsm| (wsm.clone(), self.get_overall_from_name_previous(wsm.name))).collect()
     }
 }

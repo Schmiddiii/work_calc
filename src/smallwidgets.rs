@@ -1,9 +1,9 @@
-use druid::widget::{Flex, Label, Painter, Parse, TextBox};
+use druid::widget::{Button, Flex, Label, Painter, Parse, TextBox};
 use druid::{Env, RenderContext, Widget, WidgetExt};
 use druid::lens::{self, LensExt};
 use druid::{Lens, Data};
 
-use crate::states::{WorkerStateMonth};
+use crate::states::{WorkerStateMonth, WorkedMonth};
 use crate::theme;
 
 pub fn build_name_label() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
@@ -23,7 +23,7 @@ pub fn build_painter() -> Painter<(WorkerStateMonth, Option<f32>)> {
     Painter::new(|ctx, data: &(WorkerStateMonth, Option<f32>), _env| {
         let bounds = ctx.size().to_rect().inset(-theme::STROKE_WIDTH / 2.0);
         let rounded = bounds.to_rounded_rect(theme::CORNER_RADIUS);
-        if data.0.has_to_work.is_some() && data.0.worked.is_some() && data.0.paid_out.is_some() {
+        if data.0.has_to_work.is_some() && data.0.worked.is_some() && data.0.paid_out.is_some() && data.0.has_to_work.unwrap() != 0.0 && data.0.worked.unwrap() != 0.0 {
             ctx.stroke(rounded, &theme::COLOR_DONE, theme::STROKE_WIDTH);
         } else {
             ctx.stroke(rounded, &theme::COLOR_NOT_DONE, theme::STROKE_WIDTH);
@@ -52,5 +52,27 @@ pub fn build_flex_column<T: Data>(widgets: Vec<Box<dyn Widget<T>>>) -> impl Widg
 
 pub fn build_widget_with_label_row<T: Data>(label1: &str, label2: impl Widget<T> + 'static) -> impl Widget<T> {
     return Flex::column().with_child(Label::new(label1)).with_spacer(theme::SPACER_SIZE).with_child(label2).with_spacer(theme::SPACER_SIZE);
+
+}
+
+pub fn build_new_worker_widget() -> impl Widget<WorkedMonth> {
+    Flex::row()
+        .with_child(build_widget_with_label_row("First Name", TextBox::new().lens(lens::Id.map(
+            |d: &WorkedMonth| d.new_worker_name.0.clone(),
+            |d: &mut WorkedMonth, v: String| d.new_worker_name.0 = v.clone()
+        ))))
+        .with_spacer(theme::SPACER_SIZE)
+        .with_child(build_widget_with_label_row("Last Name", TextBox::new().lens(lens::Id.map(
+            |d: &WorkedMonth| d.new_worker_name.1.clone(),
+            |d: &mut WorkedMonth, v: String| d.new_worker_name.1 = v.clone()
+        ))))
+        .with_spacer(theme::SPACER_SIZE)
+        .with_child(Button::new("Submit").on_click(
+            |_, data: &mut WorkedMonth, _| {
+                data.workers.push_back(WorkerStateMonth::new(data.new_worker_name.clone()));
+                data.new_worker_name = ("".to_string(), "".to_string());
+            }
+        ))
+        .with_spacer(theme::SPACER_SIZE)
 
 }

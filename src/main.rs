@@ -37,7 +37,7 @@ fn main() -> Result<(), PlatformError> {
     let mut data_pre = states::WorkedMonth {
         month: Arc::new(Local.ymd(2020,9,1)),
         workers: Vector::new(),
-        last_month: None
+        new_worker_name: ("".to_string(), "".to_string())
     };
 
     data_pre.workers.push_back(worker3);
@@ -45,14 +45,22 @@ fn main() -> Result<(), PlatformError> {
     let mut data = states::WorkedMonth {
         month: Arc::new(Local.ymd(2020, 10, 1)),
         workers: Vector::new(),
-        last_month: Some(Box::new(data_pre))
+        new_worker_name: ("".to_string(), "".to_string())
     };
 
     data.workers.push_front(worker1);
     data.workers.push_back(worker2);
 
+    let mut work_data = states::WorkData {
+        index: 1,
+        months: Vector::new()
+    };
+
+    work_data.months.push_back(data_pre);
+    work_data.months.push_back(data);
+
 
     AppLauncher::with_window(main_window)
         .use_simple_logger()
-        .launch(data)
+        .launch(work_data)
 }
