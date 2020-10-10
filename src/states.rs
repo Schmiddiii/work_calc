@@ -1,7 +1,7 @@
 use druid::im::Vector;
 use druid::{Data, Lens};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use std::sync::Arc;
 

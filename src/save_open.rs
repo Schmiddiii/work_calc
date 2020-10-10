@@ -1,11 +1,13 @@
 use crate::states::WorkData;
 use crate::write_to_pdf::write_to_pdf;
 
-use druid::{commands, AppDelegate, Command, DelegateCtx, Env, Target, Widget, FileSpec, FileDialogOptions};
 use druid::widget::Button;
+use druid::{
+    commands, AppDelegate, Command, DelegateCtx, Env, FileDialogOptions, FileSpec, Target, Widget,
+};
 
+use crate::strings::{STR_OPEN_RON, STR_SAVE_PDF, STR_SAVE_RON};
 use ron;
-use crate::strings::{STR_SAVE_PDF, STR_OPEN_RON, STR_SAVE_RON};
 
 const RON_FILETYPE: FileSpec = FileSpec::new("Rust Object Notation", &["ron"]);
 const PDF_FILETYPE: FileSpec = FileSpec::new("Printable Document Format", &["pdf"]);
@@ -26,7 +28,6 @@ impl AppDelegate<WorkData> for Delegate {
             if file_extension.is_none() {
                 println!("Cannot identify type of file: {:?}", file_info.path());
                 return false;
-
             }
             match file_extension.unwrap().to_str().unwrap() {
                 "ron" => {
@@ -34,13 +35,11 @@ impl AppDelegate<WorkData> for Delegate {
                     if let Err(e) = std::fs::write(file_info.path(), &serialized) {
                         println!("Error writing file: {}", e);
                     }
-                },
+                }
                 "pdf" => {
                     write_to_pdf(&data, file_info.path());
-                },
-                _ => {
                 }
-
+                _ => {}
             }
 
             return false;
@@ -72,7 +71,10 @@ pub fn build_save_widget() -> impl Widget<WorkData> {
         .default_type(RON_FILETYPE);
 
     let save_widget = Button::new(STR_SAVE_RON).on_click(move |ctx, _, _| {
-        ctx.submit_command(druid::commands::SHOW_SAVE_PANEL.with(save_dialog_options.clone()), Target::Window(ctx.window_id()));
+        ctx.submit_command(
+            druid::commands::SHOW_SAVE_PANEL.with(save_dialog_options.clone()),
+            Target::Window(ctx.window_id()),
+        );
     });
 
     return save_widget;
@@ -85,7 +87,10 @@ pub fn build_open_widget() -> impl Widget<WorkData> {
         .default_type(RON_FILETYPE);
 
     let open_widget = Button::new(STR_OPEN_RON).on_click(move |ctx, _, _| {
-        ctx.submit_command(druid::commands::SHOW_OPEN_PANEL.with(open_dialog_options.clone()), Target::Window(ctx.window_id()));
+        ctx.submit_command(
+            druid::commands::SHOW_OPEN_PANEL.with(open_dialog_options.clone()),
+            Target::Window(ctx.window_id()),
+        );
     });
 
     return open_widget;
@@ -98,9 +103,11 @@ pub fn build_save_to_pdf_widget() -> impl Widget<WorkData> {
         .default_type(PDF_FILETYPE);
 
     let save_widget = Button::new(STR_SAVE_PDF).on_click(move |ctx, _, _| {
-        ctx.submit_command(druid::commands::SHOW_SAVE_PANEL.with(save_dialog_options.clone()), Target::Window(ctx.window_id()));
+        ctx.submit_command(
+            druid::commands::SHOW_SAVE_PANEL.with(save_dialog_options.clone()),
+            Target::Window(ctx.window_id()),
+        );
     });
 
     return save_widget;
-
 }

@@ -1,4 +1,3 @@
-
 pub const STR_HAS_TO_WORK: &str = "Has to work";
 pub const STR_WORKED: &str = "Worked";
 pub const STR_PAID_OUT: &str = "Paid out";

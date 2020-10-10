@@ -3,38 +3,51 @@ use druid::lens::{self, LensExt};
 use druid::widget::{Align, Button, Container, Flex, Label, List, Scroll};
 use druid::{Env, Widget, WidgetExt};
 
+use crate::save_open;
 use crate::smallwidgets;
 use crate::states::{WorkData, WorkedMonth, WorkerStateMonth};
+use crate::strings::{
+    STR_DELTA, STR_HAS_TO_WORK, STR_LAST_MONTH, STR_MONTH_FORMAT, STR_OVERALL, STR_PAID_OUT,
+    STR_WORKED,
+};
 use crate::theme;
-use crate::save_open;
-use crate::strings::{STR_HAS_TO_WORK, STR_WORKED, STR_PAID_OUT, STR_DELTA, STR_LAST_MONTH, STR_OVERALL, STR_MONTH_FORMAT};
 
 pub fn ui_builder() -> impl Widget<WorkData> {
     Flex::column()
-        .with_child(Flex::row().with_child(save_open::build_save_widget()).with_child(save_open::build_open_widget()).with_child(save_open::build_save_to_pdf_widget()))
         .with_child(
             Flex::row()
                 .with_flex_child(
                     Align::left(
-                        Button::new("<").on_click(|_, data: &mut WorkData, _| data.previous_month()),
+                        Button::new("<")
+                            .on_click(|_, data: &mut WorkData, _| data.previous_month()),
                     ),
                     1.0,
                 )
-                .with_child(Align::centered(ui_month_overview()))
+                .with_child(save_open::build_save_widget())
+                .with_child(save_open::build_open_widget())
+                .with_child(save_open::build_save_to_pdf_widget())
                 .with_flex_child(
-                    Align::right(Button::new(">").on_click(|_, data: &mut WorkData, _| data.next_month())),
+                    Align::right(
+                        Button::new(">").on_click(|_, data: &mut WorkData, _| data.next_month()),
+                    ),
                     1.0,
-                )
-
+                ),
+        )
+        .with_flex_child(
+            Scroll::new(Flex::row().with_child(ui_month_overview())).vertical(),
+            1.0,
         )
 }
 
 pub fn ui_month_overview() -> impl Widget<WorkData> {
     let month_label = Label::new(|data: &WorkData, _env: &Env| {
-        data.months[data.index].month.format(STR_MONTH_FORMAT).to_string()
+        data.months[data.index]
+            .month
+            .format(STR_MONTH_FORMAT)
+            .to_string()
     });
 
-    let list = Scroll::new(List::new(|| {
+    let list = List::new(|| {
         Flex::column()
             .with_child(Flex::row().with_child(side_buttons()).with_child(
                 ui_worker_state_month().lens(lens::Id.map(
@@ -53,9 +66,9 @@ pub fn ui_month_overview() -> impl Widget<WorkData> {
                 )),
             ))
             .with_spacer(theme::SPACER_SIZE)
-    }))
-    .vertical()
-    .lens(lens::Id.map(
+    });
+
+    let list_lens = list.lens(lens::Id.map(
         |d: &WorkData| {
             let overall_with_state_previous = d.get_overall_with_state_all_previous();
             (
@@ -73,7 +86,7 @@ pub fn ui_month_overview() -> impl Widget<WorkData> {
     let layout = Flex::column()
         .with_child(month_label)
         .with_spacer(theme::SPACER_SIZE)
-        .with_child(list)
+        .with_child(list_lens)
         .with_spacer(theme::SPACER_SIZE)
         .with_child(smallwidgets::build_new_worker_widget().lens(lens::Id.map(
             |d: &WorkData| d.months[d.index].clone(),

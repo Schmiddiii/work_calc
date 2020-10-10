@@ -4,8 +4,8 @@ use druid::{Data, Lens};
 use druid::{Env, RenderContext, Widget, WidgetExt};
 
 use crate::states::{WorkedMonth, WorkerStateMonth};
-use crate::theme;
 use crate::strings::*;
+use crate::theme;
 
 pub fn build_name_label() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
     Label::new(|data: &WorkerStateMonth, _env: &Env| format!("{} {}", data.name.0, data.name.1))

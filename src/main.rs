@@ -1,6 +1,5 @@
 extern crate chrono;
 
-
 use druid::im::Vector;
 use druid::{AppLauncher, PlatformError, WindowDesc};
 
@@ -11,10 +10,10 @@ use std::sync::Arc;
 mod save_open;
 mod smallwidgets;
 mod states;
+mod strings;
 mod theme;
 mod widgets;
 mod write_to_pdf;
-mod strings;
 
 fn main() -> Result<(), PlatformError> {
     let main_window = WindowDesc::new(widgets::ui_builder);
