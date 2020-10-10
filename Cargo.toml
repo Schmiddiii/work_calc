@@ -8,4 +8,8 @@ edition = "2018"
 
 [dependencies]
 druid = {version = "0.6.0", features = ["im"]}
-chrono = "*"
+im = {version = "*", features = ["serde"]}
+chrono = {version = "0.4", features = ["serde"]}
+serde = {version = "*", features = ["rc"]}
+ron = "*"
+printpdf = "0.3.2"
