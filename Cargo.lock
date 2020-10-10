@@ -1031,18 +1031,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mama_arbeit"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "druid",
- "im",
- "printpdf",
- "ron",
- "serde",
-]
-
-[[package]]
 name = "maybe-uninit"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1937,6 +1925,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d129932f4644ac2396cb456385cbf9e63b5b30c6e8dc4820bdca4eb082037a5"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "work_calc"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "druid",
+ "im",
+ "printpdf",
+ "ron",
+ "serde",
 ]
 
 [[package]]

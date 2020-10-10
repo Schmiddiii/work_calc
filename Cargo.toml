@@ -1,5 +1,5 @@
 [package]
-name = "mama_arbeit"
+name = "work_calc"
 version = "0.1.0"
 authors = ["Julian Schmidhuber <schmidhuberj2@protonmail.com>"]
 edition = "2018"
