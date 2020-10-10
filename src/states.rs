@@ -1,59 +1,114 @@
-use druid::im::{Vector, HashMap, HashSet, OrdMap};
+use druid::im::Vector;
 use druid::{Data, Lens};
+
+use serde::{Deserialize, Serialize};
 
 use std::sync::Arc;
 
 use chrono::prelude::*;
 
-pub type Name = (String, String);    // (First name, Last name)
+pub type Name = (String, String);
 
-#[derive(Clone, Debug, Data, Lens, PartialEq)]
+#[derive(Clone, Debug, Data, Lens, PartialEq, Serialize, Deserialize)]
 pub struct WorkerStateMonth {
-    pub done: bool,
+    pub name: (String, String), // (First name, Last name)
     pub has_to_work: Option<f32>,
     pub worked: Option<f32>,
     pub paid_out: Option<f32>,
 }
 
-#[derive(Clone, Debug, Data, Lens, PartialEq)]
+#[derive(Clone, Debug, Data, Lens, PartialEq, Serialize, Deserialize)]
 pub struct WorkedMonth {
-    pub month: Arc<Date<Local>>,
+    pub month: Arc<NaiveDate>,
     pub workers: Vector<WorkerStateMonth>,
+    pub new_worker_name: Name,
 }
 
-#[derive(Clone, Debug, Data, Lens, PartialEq)]
+#[derive(Clone, Debug, Data, Lens, PartialEq, Serialize, Deserialize)]
 pub struct WorkData {
-    pub current_date: Arc<Date<Local>>,
-    pub known_names: HashSet<Name>,
-    map: OrdMap<(Arc<Date<Local>>, Name), WorkerStateMonth>
+    pub months: Vector<WorkedMonth>,
+    pub index: usize,
 }
 
-impl WorkData {
-    pub fn new(current_date: Date<Local>) -> WorkData {
-        WorkData {
-            current_date: Arc::new(current_date),
-            known_names: HashSet::new(),
-            map: OrdMap::new()
+impl WorkerStateMonth {
+    pub fn get_delta(&self) -> Option<f32> {
+        if self.has_to_work.is_none() || self.worked.is_none() || self.paid_out.is_none() {
+            return None;
+        }
+        Some(self.worked.unwrap() - self.has_to_work.unwrap() - self.paid_out.unwrap())
+    }
+
+    pub fn new(name: Name) -> WorkerStateMonth {
+        WorkerStateMonth {
+            name,
+            has_to_work: Some(0.0),
+            worked: Some(0.0),
+            paid_out: Some(0.0),
+        }
+    }
+}
+
+impl WorkedMonth {
+    pub fn create_next_month(&self) -> WorkedMonth {
+        WorkedMonth {
+            month: Arc::new(NaiveDate::from_ymd(
+                self.month.year() + if self.month.month() == 12 { 1 } else { 0 },
+                self.month.month() % 12 + 1,
+                1,
+            )),
+            workers: self
+                .workers
+                .iter()
+                .map(|w| WorkerStateMonth::new(w.name.clone()))
+                .collect(),
+            new_worker_name: ("".to_string(), "".to_string()),
         }
     }
 
-    pub fn insert(&mut self, date: Date<Local>, name: Name, value: WorkerStateMonth) {
-        self.known_names.insert(name.clone());
-        self.map.insert((Arc::new(date), name), value);
+    pub fn get_from_name(&self, name: Name) -> Option<WorkerStateMonth> {
+        self.workers.clone().into_iter().find(|v| v.name == name)
     }
-
-    pub fn get_from_month(&self, date: Date<Local>) -> Vector<(Name, WorkerStateMonth)> {
-        let with_none = self.known_names.clone().into_iter().map(|n| (n.clone(), self.map.get(&(Arc::new(date), n))));
-
-        with_none.filter(|v| (v).1.is_some()).map(|v| (v.0, v.1.unwrap().clone())).collect()
-    }
-
-    pub fn get_mut(&mut self, date: Date<Local>, name: Name) -> Option<&mut WorkerStateMonth> {
-        self.map.get_mut(&(Arc::new(date), name))
-
-    }
-
 }
 
+impl WorkData {
+    pub fn previous_month(&mut self) {
+        if self.index > 0 {
+            self.index = self.index - 1;
+        }
+    }
 
+    pub fn next_month(&mut self) {
+        self.index = self.index + 1;
+        if self.index >= self.months.len() {
+            self.index = self.months.len();
+            if self.months.len() != 0 {
+                self.months
+                    .push_back(self.months[self.index - 1].create_next_month())
+            }
+        }
+    }
 
+    pub fn get_overall_from_name_previous(&self, name: Name) -> Option<f32> {
+        let mut result = None;
+
+        let mut previous_months = self.months.clone();
+        previous_months.truncate(self.index);
+
+        for wsm in previous_months {
+            let worker = wsm.workers.iter().find(|w| w.name == name);
+            if worker.is_some() {
+                result = Some(result.unwrap_or(0.0) + worker.unwrap().get_delta().unwrap_or(0.0));
+            }
+        }
+
+        return result;
+    }
+
+    pub fn get_overall_with_state_all_previous(&self) -> Vector<(WorkerStateMonth, Option<f32>)> {
+        let current_workers = self.months[self.index].workers.clone();
+        current_workers
+            .into_iter()
+            .map(|wsm| (wsm.clone(), self.get_overall_from_name_previous(wsm.name)))
+            .collect()
+    }
+}
