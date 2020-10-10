@@ -3,14 +3,15 @@ use std::io::BufWriter;
 
 use printpdf::*;
 
-use crate::states::{WorkedMonth, WorkerStateMonth, WorkData};
+use crate::states::{WorkerStateMonth, WorkData};
 use std::fs::OpenOptions;
 use chrono::NaiveDate;
+use crate::strings::{STR_HAS_TO_WORK, STR_WORKED, STR_PAID_OUT, STR_DELTA, STR_LAST_MONTH, STR_OVERALL, STR_MONTH_FORMAT};
 
 const PDF_WIDTH: f64 = 210.0;
 const PDF_HEIGHT: f64 = 297.0;
-const PDF_PADDING_X: f64 = 20.0;
-const PDF_PADDING_Y: f64 = 20.0;
+const PDF_PADDING_X: f64 = 10.0;
+const PDF_PADDING_Y: f64 = 10.0;
 
 const PDF_FONT_SIZE: i64 = 12;
 const PDF_FONT_OFFSET_X: f64 = 1.0;
@@ -19,12 +20,12 @@ const PDF_FONT_OFFSET_Y: f64 = 1.0;
 
 const CELL_SIZE_Y: f64 = 6.0;
 
-const CELL_SIZE_NAME_X: f64 = 30.0;
-const CELL_SIZE_HASTOWORK_X: f64 = 30.0;
+const CELL_SIZE_NAME_X: f64 = 65.0;
+const CELL_SIZE_HASTOWORK_X: f64 = 25.0;
 const CELL_SIZE_WORKED_X: f64 = 20.0;
 const CELL_SIZE_PAIDOUT_X: f64 = 20.0;
-const CELL_SIZE_DELTA_X: f64 = 20.0;
-const CELL_SIZE_LASTMONTH_X: f64 = 30.0;
+const CELL_SIZE_DELTA_X: f64 = 15.0;
+const CELL_SIZE_LASTMONTH_X: f64 = 25.0;
 const CELL_SIZE_OVERALL_X: f64 = 20.0;
 
 
@@ -43,22 +44,19 @@ pub fn write_to_pdf(data: &WorkData, path: &Path) {
 }
 
 fn write_single_worker(data: &WorkerStateMonth, last_month: Option<f32>, month: NaiveDate, layer: &PdfLayerReference, number: usize, font: &IndirectFontRef) {
-    let name_format = format!("{} {}", data.name.0, data.name.1);
-    // layer.use_text(name_format, PDF_FONT_SIZE, Mm(PDF_PADDING_X), Mm(PDF_HEIGHT - PDF_PADDING_Y - 2.0 * (number as f64) * CELL_SIZE_Y), font);
     write_information_line(month, layer, PDF_HEIGHT - PDF_PADDING_Y - (number as f64) * CELL_SIZE_Y, font);
-    // write_box(name_format, layer, PDF_PADDING_X, PDF_HEIGHT - PDF_PADDING_Y - (number + 1) as f64 * CELL_SIZE_Y, CELL_SIZE_NAME_X, CELL_SIZE_Y, font);
     write_data_line(data, last_month, layer, PDF_HEIGHT - PDF_PADDING_Y - (1.0+number as f64) * CELL_SIZE_Y, font);
 }
 
 fn write_information_line(month: NaiveDate, layer: &PdfLayerReference, y: f64, font: &IndirectFontRef) {
-    let month_format = month.format("%B %Y").to_string();
+    let month_format = month.format(STR_MONTH_FORMAT).to_string();
     write_box(month_format, layer, PDF_PADDING_X, y, CELL_SIZE_NAME_X, CELL_SIZE_Y, font);
-    write_box("Has to work", layer, PDF_PADDING_X + CELL_SIZE_NAME_X, y, CELL_SIZE_HASTOWORK_X, CELL_SIZE_Y, font);
-    write_box("Worked", layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X, y, CELL_SIZE_WORKED_X, CELL_SIZE_Y, font);
-    write_box("Paid Out", layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X, y, CELL_SIZE_PAIDOUT_X, CELL_SIZE_Y, font);
-    write_box("Delta", layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X + CELL_SIZE_PAIDOUT_X, y, CELL_SIZE_DELTA_X, CELL_SIZE_Y, font);
-    write_box("Last Month", layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X + CELL_SIZE_PAIDOUT_X + CELL_SIZE_DELTA_X, y, CELL_SIZE_LASTMONTH_X, CELL_SIZE_Y, font);
-    write_box("Overall", layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X + CELL_SIZE_PAIDOUT_X + CELL_SIZE_DELTA_X + CELL_SIZE_LASTMONTH_X, y, CELL_SIZE_OVERALL_X, CELL_SIZE_Y, font);
+    write_box(STR_HAS_TO_WORK, layer, PDF_PADDING_X + CELL_SIZE_NAME_X, y, CELL_SIZE_HASTOWORK_X, CELL_SIZE_Y, font);
+    write_box(STR_WORKED, layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X, y, CELL_SIZE_WORKED_X, CELL_SIZE_Y, font);
+    write_box(STR_PAID_OUT, layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X, y, CELL_SIZE_PAIDOUT_X, CELL_SIZE_Y, font);
+    write_box(STR_DELTA, layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X + CELL_SIZE_PAIDOUT_X, y, CELL_SIZE_DELTA_X, CELL_SIZE_Y, font);
+    write_box(STR_LAST_MONTH, layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X + CELL_SIZE_PAIDOUT_X + CELL_SIZE_DELTA_X, y, CELL_SIZE_LASTMONTH_X, CELL_SIZE_Y, font);
+    write_box(STR_OVERALL, layer, PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X + CELL_SIZE_PAIDOUT_X + CELL_SIZE_DELTA_X + CELL_SIZE_LASTMONTH_X, y, CELL_SIZE_OVERALL_X, CELL_SIZE_Y, font);
 }
 
 fn write_data_line(data: &WorkerStateMonth, last_month: Option<f32>, layer: &PdfLayerReference, y: f64, font: &IndirectFontRef) {

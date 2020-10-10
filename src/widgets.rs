@@ -7,6 +7,7 @@ use crate::smallwidgets;
 use crate::states::{WorkData, WorkedMonth, WorkerStateMonth};
 use crate::theme;
 use crate::save_open;
+use crate::strings::{STR_HAS_TO_WORK, STR_WORKED, STR_PAID_OUT, STR_DELTA, STR_LAST_MONTH, STR_OVERALL, STR_MONTH_FORMAT};
 
 pub fn ui_builder() -> impl Widget<WorkData> {
     Flex::column()
@@ -30,7 +31,7 @@ pub fn ui_builder() -> impl Widget<WorkData> {
 
 pub fn ui_month_overview() -> impl Widget<WorkData> {
     let month_label = Label::new(|data: &WorkData, _env: &Env| {
-        data.months[data.index].month.format("%B %Y").to_string()
+        data.months[data.index].month.format(STR_MONTH_FORMAT).to_string()
     });
 
     let list = Scroll::new(List::new(|| {
@@ -117,7 +118,6 @@ fn side_buttons() -> impl Widget<(
                 (WorkerStateMonth, Option<f32>),
             ),
              _| {
-                // shared.retain(|v| v != item);
                 let index = shared.index_of(item);
                 if index.is_some() && index.unwrap() != shared.len() - 1 {
                     shared.swap(index.unwrap(), index.unwrap() + 1);
@@ -132,13 +132,13 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
     let painter = smallwidgets::build_painter();
 
     let has_to_work_flex = smallwidgets::build_label_with_input(
-        Label::new("Has to work"),
+        Label::new(STR_HAS_TO_WORK),
         WorkerStateMonth::has_to_work,
     );
     let worked_flex =
-        smallwidgets::build_label_with_input(Label::new("Worked"), WorkerStateMonth::worked);
+        smallwidgets::build_label_with_input(Label::new(STR_WORKED), WorkerStateMonth::worked);
     let paid_out_flex =
-        smallwidgets::build_label_with_input(Label::new("Paid out"), WorkerStateMonth::paid_out);
+        smallwidgets::build_label_with_input(Label::new(STR_PAID_OUT), WorkerStateMonth::paid_out);
 
     let inputs = smallwidgets::build_flex_column(vec![
         Box::new(has_to_work_flex),
@@ -163,7 +163,7 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
         |d: &mut (WorkerStateMonth, Option<f32>), v: WorkerStateMonth| d.0 = v,
     ));
 
-    let delta_flex = smallwidgets::build_widget_with_label_row("Delta", delta_output);
+    let delta_flex = smallwidgets::build_widget_with_label_row(STR_DELTA, delta_output);
 
     let last_month_output = Label::new(|data: &Option<f32>, _env: &Env| {
         if data.is_none() {
@@ -178,7 +178,7 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
     ));
 
     let last_month_flex =
-        smallwidgets::build_widget_with_label_row("Last month", last_month_output);
+        smallwidgets::build_widget_with_label_row(STR_LAST_MONTH, last_month_output);
 
     let overall_output = Label::new(|data: &(WorkerStateMonth, Option<f32>), _env: &Env| {
         let delta = data.0.get_delta();
@@ -188,7 +188,7 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
         format!("{}", delta.unwrap() + data.1.unwrap_or(0.0))
     });
 
-    let overall_flex = smallwidgets::build_widget_with_label_row("Overall", overall_output);
+    let overall_flex = smallwidgets::build_widget_with_label_row(STR_OVERALL, overall_output);
 
     let worker_stats = smallwidgets::build_flex_column(vec![
         Box::new(inputs),

@@ -5,6 +5,7 @@ use druid::{Env, RenderContext, Widget, WidgetExt};
 
 use crate::states::{WorkedMonth, WorkerStateMonth};
 use crate::theme;
+use crate::strings::*;
 
 pub fn build_name_label() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
     Label::new(|data: &WorkerStateMonth, _env: &Env| format!("{} {}", data.name.0, data.name.1))
@@ -72,7 +73,7 @@ pub fn build_widget_with_label_row<T: Data>(
 pub fn build_new_worker_widget() -> impl Widget<WorkedMonth> {
     Flex::row()
         .with_child(build_widget_with_label_row(
-            "First Name",
+            STR_FIRST_NAME,
             TextBox::new().lens(lens::Id.map(
                 |d: &WorkedMonth| d.new_worker_name.0.clone(),
                 |d: &mut WorkedMonth, v: String| d.new_worker_name.0 = v.clone(),
@@ -80,7 +81,7 @@ pub fn build_new_worker_widget() -> impl Widget<WorkedMonth> {
         ))
         .with_spacer(theme::SPACER_SIZE)
         .with_child(build_widget_with_label_row(
-            "Last Name",
+            STR_LAST_NAME,
             TextBox::new().lens(lens::Id.map(
                 |d: &WorkedMonth| d.new_worker_name.1.clone(),
                 |d: &mut WorkedMonth, v: String| d.new_worker_name.1 = v.clone(),
@@ -88,7 +89,7 @@ pub fn build_new_worker_widget() -> impl Widget<WorkedMonth> {
         ))
         .with_spacer(theme::SPACER_SIZE)
         .with_child(
-            Button::new("Submit").on_click(|_, data: &mut WorkedMonth, _| {
+            Button::new(STR_SUBMIT).on_click(|_, data: &mut WorkedMonth, _| {
                 if data.get_from_name(data.new_worker_name.clone()).is_none() {
                     data.workers
                         .push_back(WorkerStateMonth::new(data.new_worker_name.clone()));
