@@ -1,6 +1,10 @@
 # work_calc
 A program to calculate how much your workers have worked, had to worked and calculating overtime
 
+#Screenshot
+
+![Screenshot](Screenshots/Work_Calc_Screenshot.png)
+
  # Usage
  Firt of all you have to create your workers. You have to do this by entering the name of the worker at the botton of the list and clicking submit. 
  You will notice the list will be filled with boxes containing the name of your workers. 

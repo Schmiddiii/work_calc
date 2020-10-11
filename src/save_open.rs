@@ -8,6 +8,7 @@ use druid::{
 
 use crate::strings::{STR_OPEN_RON, STR_SAVE_PDF, STR_SAVE_RON};
 use ron;
+use std::path::Path;
 
 const RON_FILETYPE: FileSpec = FileSpec::new("Rust Object Notation", &["ron"]);
 const PDF_FILETYPE: FileSpec = FileSpec::new("Printable Document Format", &["pdf"]);
@@ -45,22 +46,39 @@ impl AppDelegate<WorkData> for Delegate {
             return false;
         }
         if let Some(file_info) = cmd.get(commands::OPEN_FILE) {
-            match std::fs::read_to_string(file_info.path()) {
-                Ok(s) => {
-                    let deserialized = ron::from_str(&s);
-                    if deserialized.is_ok() {
-                        *data = deserialized.unwrap();
-                    } else {
-                        println!("Error interpreting file: {:?}", file_info.path());
-                    }
-                }
-                Err(e) => {
-                    println!("Error opening file: {}", e);
-                }
+            // match std::fs::read_to_string(file_info.path()) {
+            //     Ok(s) => {
+            //         let deserialized = ron::from_str(&s);
+            //         if deserialized.is_ok() {
+            //             *data = deserialized.unwrap();
+            //         } else {
+            //             println!("Error interpreting file: {:?}", file_info.path());
+            //         }
+            //     }
+            //     Err(e) => {
+            //         println!("Error opening file: {}", e);
+            //     }
+            // }
+            let data_result = open_file(file_info.path());
+            if data_result.is_ok() {
+                *data = data_result.unwrap();
             }
             return false;
         }
         true
+    }
+}
+
+pub fn open_file(path: &Path) -> Result<WorkData, &str> {
+    match std::fs::read_to_string(path) {
+        Ok(s) => {
+            let deserialized = ron::from_str(&s);
+            match deserialized {
+                Ok(wd) => return Ok(wd),
+                Err(_) => return Err("Cannot deserialize file")
+            }
+        }
+        Err(_) => Err("Cannot read file"),
     }
 }
 

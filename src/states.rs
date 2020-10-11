@@ -37,7 +37,11 @@ impl WorkerStateMonth {
         }
 
         // Round to two digits
-        Some(((self.worked.unwrap() - self.has_to_work.unwrap() - self.paid_out.unwrap()) * 100.0).round() / 100.0)
+        Some(
+            ((self.worked.unwrap() - self.has_to_work.unwrap() - self.paid_out.unwrap()) * 100.0)
+                .round()
+                / 100.0,
+        )
     }
 
     pub fn new(name: Name) -> WorkerStateMonth {

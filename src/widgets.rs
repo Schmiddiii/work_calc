@@ -198,7 +198,10 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f64>)> {
         if delta.is_none() {
             return "".to_string();
         }
-        format!("{}", (((delta.unwrap() + data.1.unwrap_or(0.0)) * 100.0).round() / 100.0))
+        format!(
+            "{}",
+            (((delta.unwrap() + data.1.unwrap_or(0.0)) * 100.0).round() / 100.0)
+        )
     });
 
     let overall_flex = smallwidgets::build_widget_with_label_row(STR_OVERALL, overall_output);

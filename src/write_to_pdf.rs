@@ -38,13 +38,18 @@ pub fn write_to_pdf(data: &WorkData, path: &Path) {
         .expect("Cannot load font");
 
     let workers_per_page = ((PDF_HEIGHT - 2.0 * PDF_PADDING_Y) / (2.0 * CELL_SIZE_Y)) as usize;
-    let num_pages = (data.months[data.index].workers.len() as f64 / workers_per_page as f64).ceil() as usize;
+    let num_pages =
+        (data.months[data.index].workers.len() as f64 / workers_per_page as f64).ceil() as usize;
 
     let mut layers: Vec<PdfLayerReference> = vec![];
     layers.push(doc.get_page(page1).get_layer(layer1));
 
     for i in 1..num_pages {
-        let (page, layer) = doc.add_page(Mm(PDF_WIDTH), Mm(PDF_HEIGHT), format!("Page {}, Layer 1", i));
+        let (page, layer) = doc.add_page(
+            Mm(PDF_WIDTH),
+            Mm(PDF_HEIGHT),
+            format!("Page {}, Layer 1", i),
+        );
         layers.push(doc.get_page(page).get_layer(layer));
     }
 
@@ -57,7 +62,7 @@ pub fn write_to_pdf(data: &WorkData, path: &Path) {
                 w,
                 (*data).get_overall_from_name_previous(w.clone().name),
                 *data.months[data.index].month,
-                &layers[(n/workers_per_page) as usize],
+                &layers[(n / workers_per_page) as usize],
                 2 * (n % workers_per_page),
                 &font,
             )
@@ -256,7 +261,8 @@ fn write_data_line(
         font,
     );
     write_box(
-        (((last_month.unwrap_or(0.0) + data.get_delta().unwrap_or(0.0)) * 100.0).round() / 100.0).to_string(),
+        (((last_month.unwrap_or(0.0) + data.get_delta().unwrap_or(0.0)) * 100.0).round() / 100.0)
+            .to_string(),
         layer,
         PDF_PADDING_X
             + CELL_SIZE_NAME_X
