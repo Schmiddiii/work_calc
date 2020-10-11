@@ -14,16 +14,16 @@ use std::fs::OpenOptions;
 const PDF_WIDTH: f64 = 210.0;
 const PDF_HEIGHT: f64 = 297.0;
 const PDF_PADDING_X: f64 = 10.0;
-const PDF_PADDING_Y: f64 = 10.0;
+const PDF_PADDING_Y: f64 = 20.0;
 
-const PDF_FONT_SIZE: i64 = 12;
+const PDF_FONT_SIZE: i64 = 14;
 const PDF_FONT_OFFSET_X: f64 = 1.0;
 const PDF_FONT_OFFSET_Y: f64 = 1.0;
 
-const CELL_SIZE_Y: f64 = 6.0;
+const CELL_SIZE_Y: f64 = 8.0;
 
-const CELL_SIZE_NAME_X: f64 = 65.0;
-const CELL_SIZE_HASTOWORK_X: f64 = 25.0;
+const CELL_SIZE_NAME_X: f64 = 63.0;
+const CELL_SIZE_HASTOWORK_X: f64 = 27.0;
 const CELL_SIZE_WORKED_X: f64 = 20.0;
 const CELL_SIZE_PAIDOUT_X: f64 = 20.0;
 const CELL_SIZE_DELTA_X: f64 = 15.0;
@@ -37,9 +37,17 @@ pub fn write_to_pdf(data: &WorkData, path: &Path) {
         .add_builtin_font(BuiltinFont::TimesRoman)
         .expect("Cannot load font");
 
-    let current_layer = doc.get_page(page1).get_layer(layer1);
+    let workers_per_page = ((PDF_HEIGHT - 2.0 * PDF_PADDING_Y) / (2.0 * CELL_SIZE_Y)) as usize;
+    let num_pages = (data.months[data.index].workers.len() as f32 / workers_per_page as f32).ceil() as usize;
 
-    // DO STUFF
+    let mut layers: Vec<PdfLayerReference> = vec![];
+    layers.push(doc.get_page(page1).get_layer(layer1));
+
+    for i in 1..num_pages {
+        let (page, layer) = doc.add_page(Mm(PDF_WIDTH), Mm(PDF_HEIGHT), format!("Page {}, Layer 1", i));
+        layers.push(doc.get_page(page).get_layer(layer));
+    }
+
     data.months[data.index]
         .workers
         .iter()
@@ -49,8 +57,8 @@ pub fn write_to_pdf(data: &WorkData, path: &Path) {
                 w,
                 (*data).get_overall_from_name_previous(w.clone().name),
                 *data.months[data.index].month,
-                &current_layer,
-                2 * n,
+                &layers[(n/workers_per_page) as usize],
+                2 * (n % workers_per_page),
                 &font,
             )
         });
