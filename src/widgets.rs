@@ -52,14 +52,14 @@ pub fn ui_month_overview() -> impl Widget<WorkData> {
             .with_child(Flex::row().with_child(side_buttons()).with_child(
                 ui_worker_state_month().lens(lens::Id.map(
                     |d: &(
-                        Vector<(WorkerStateMonth, Option<f32>)>,
-                        (WorkerStateMonth, Option<f32>),
+                        Vector<(WorkerStateMonth, Option<f64>)>,
+                        (WorkerStateMonth, Option<f64>),
                     )| d.1.clone(),
                     |d: &mut (
-                        Vector<(WorkerStateMonth, Option<f32>)>,
-                        (WorkerStateMonth, Option<f32>),
+                        Vector<(WorkerStateMonth, Option<f64>)>,
+                        (WorkerStateMonth, Option<f64>),
                     ),
-                     v: (WorkerStateMonth, Option<f32>)| {
+                     v: (WorkerStateMonth, Option<f64>)| {
                         d.0.set(d.0.index_of(&d.1).unwrap(), v.clone());
                         d.1 = v;
                     },
@@ -78,8 +78,8 @@ pub fn ui_month_overview() -> impl Widget<WorkData> {
         },
         |d: &mut WorkData,
          x: (
-            Vector<(WorkerStateMonth, Option<f32>)>,
-            Vector<(WorkerStateMonth, Option<f32>)>,
+            Vector<(WorkerStateMonth, Option<f64>)>,
+            Vector<(WorkerStateMonth, Option<f64>)>,
         )| { d.months[d.index].workers = x.0.iter().map(|v| v.0.clone()).collect() },
     ));
 
@@ -97,15 +97,15 @@ pub fn ui_month_overview() -> impl Widget<WorkData> {
 }
 
 fn side_buttons() -> impl Widget<(
-    Vector<(WorkerStateMonth, Option<f32>)>,
-    (WorkerStateMonth, Option<f32>),
+    Vector<(WorkerStateMonth, Option<f64>)>,
+    (WorkerStateMonth, Option<f64>),
 )> {
     Flex::column()
         .with_child(Button::new("▲").on_click(
             |_,
              (shared, item): &mut (
-                Vector<(WorkerStateMonth, Option<f32>)>,
-                (WorkerStateMonth, Option<f32>),
+                Vector<(WorkerStateMonth, Option<f64>)>,
+                (WorkerStateMonth, Option<f64>),
             ),
              _| {
                 let index = shared.index_of(item);
@@ -117,8 +117,8 @@ fn side_buttons() -> impl Widget<(
         .with_child(Button::new("-").on_click(
             |_,
              (shared, item): &mut (
-                Vector<(WorkerStateMonth, Option<f32>)>,
-                (WorkerStateMonth, Option<f32>),
+                Vector<(WorkerStateMonth, Option<f64>)>,
+                (WorkerStateMonth, Option<f64>),
             ),
              _| {
                 shared.retain(|v| v != item);
@@ -127,8 +127,8 @@ fn side_buttons() -> impl Widget<(
         .with_child(Button::new("▼").on_click(
             |_,
              (shared, item): &mut (
-                Vector<(WorkerStateMonth, Option<f32>)>,
-                (WorkerStateMonth, Option<f32>),
+                Vector<(WorkerStateMonth, Option<f64>)>,
+                (WorkerStateMonth, Option<f64>),
             ),
              _| {
                 let index = shared.index_of(item);
@@ -139,7 +139,7 @@ fn side_buttons() -> impl Widget<(
         ))
 }
 
-fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
+fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f64>)> {
     let name_label = smallwidgets::build_name_label();
 
     let painter = smallwidgets::build_painter();
@@ -159,8 +159,8 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
         Box::new(paid_out_flex),
     ])
     .lens(lens::Id.map(
-        |d: &(WorkerStateMonth, Option<f32>)| d.0.clone(),
-        |d: &mut (WorkerStateMonth, Option<f32>), v: WorkerStateMonth| d.0 = v,
+        |d: &(WorkerStateMonth, Option<f64>)| d.0.clone(),
+        |d: &mut (WorkerStateMonth, Option<f64>), v: WorkerStateMonth| d.0 = v,
     ));
 
     let delta_output = Label::new(|data: &WorkerStateMonth, _env: &Env| {
@@ -172,13 +172,13 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
         }
     })
     .lens(lens::Id.map(
-        |d: &(WorkerStateMonth, Option<f32>)| d.0.clone(),
-        |d: &mut (WorkerStateMonth, Option<f32>), v: WorkerStateMonth| d.0 = v,
+        |d: &(WorkerStateMonth, Option<f64>)| d.0.clone(),
+        |d: &mut (WorkerStateMonth, Option<f64>), v: WorkerStateMonth| d.0 = v,
     ));
 
     let delta_flex = smallwidgets::build_widget_with_label_row(STR_DELTA, delta_output);
 
-    let last_month_output = Label::new(|data: &Option<f32>, _env: &Env| {
+    let last_month_output = Label::new(|data: &Option<f64>, _env: &Env| {
         if data.is_none() {
             "".to_string()
         } else {
@@ -186,19 +186,19 @@ fn ui_worker_state_month() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
         }
     })
     .lens(lens::Id.map(
-        |d: &(WorkerStateMonth, Option<f32>)| d.1.clone(),
-        |d: &mut (WorkerStateMonth, Option<f32>), v: Option<f32>| d.1 = v,
+        |d: &(WorkerStateMonth, Option<f64>)| d.1.clone(),
+        |d: &mut (WorkerStateMonth, Option<f64>), v: Option<f64>| d.1 = v,
     ));
 
     let last_month_flex =
         smallwidgets::build_widget_with_label_row(STR_LAST_MONTH, last_month_output);
 
-    let overall_output = Label::new(|data: &(WorkerStateMonth, Option<f32>), _env: &Env| {
+    let overall_output = Label::new(|data: &(WorkerStateMonth, Option<f64>), _env: &Env| {
         let delta = data.0.get_delta();
         if delta.is_none() {
             return "".to_string();
         }
-        format!("{}", delta.unwrap() + data.1.unwrap_or(0.0))
+        format!("{}", (((delta.unwrap() + data.1.unwrap_or(0.0)) * 100.0).round() / 100.0))
     });
 
     let overall_flex = smallwidgets::build_widget_with_label_row(STR_OVERALL, overall_output);

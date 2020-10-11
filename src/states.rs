@@ -12,9 +12,9 @@ pub type Name = (String, String);
 #[derive(Clone, Debug, Data, Lens, PartialEq, Serialize, Deserialize)]
 pub struct WorkerStateMonth {
     pub name: (String, String), // (First name, Last name)
-    pub has_to_work: Option<f32>,
-    pub worked: Option<f32>,
-    pub paid_out: Option<f32>,
+    pub has_to_work: Option<f64>,
+    pub worked: Option<f64>,
+    pub paid_out: Option<f64>,
 }
 
 #[derive(Clone, Debug, Data, Lens, PartialEq, Serialize, Deserialize)]
@@ -31,11 +31,13 @@ pub struct WorkData {
 }
 
 impl WorkerStateMonth {
-    pub fn get_delta(&self) -> Option<f32> {
+    pub fn get_delta(&self) -> Option<f64> {
         if self.has_to_work.is_none() || self.worked.is_none() || self.paid_out.is_none() {
             return None;
         }
-        Some(self.worked.unwrap() - self.has_to_work.unwrap() - self.paid_out.unwrap())
+
+        // Round to two digits
+        Some(((self.worked.unwrap() - self.has_to_work.unwrap() - self.paid_out.unwrap()) * 100.0).round() / 100.0)
     }
 
     pub fn new(name: Name) -> WorkerStateMonth {
@@ -88,7 +90,7 @@ impl WorkData {
         }
     }
 
-    pub fn get_overall_from_name_previous(&self, name: Name) -> Option<f32> {
+    pub fn get_overall_from_name_previous(&self, name: Name) -> Option<f64> {
         let mut result = None;
 
         let mut previous_months = self.months.clone();
@@ -104,7 +106,7 @@ impl WorkData {
         return result;
     }
 
-    pub fn get_overall_with_state_all_previous(&self) -> Vector<(WorkerStateMonth, Option<f32>)> {
+    pub fn get_overall_with_state_all_previous(&self) -> Vector<(WorkerStateMonth, Option<f64>)> {
         let current_workers = self.months[self.index].workers.clone();
         current_workers
             .into_iter()

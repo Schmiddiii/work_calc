@@ -7,19 +7,19 @@ use crate::states::{WorkedMonth, WorkerStateMonth};
 use crate::strings::*;
 use crate::theme;
 
-pub fn build_name_label() -> impl Widget<(WorkerStateMonth, Option<f32>)> {
+pub fn build_name_label() -> impl Widget<(WorkerStateMonth, Option<f64>)> {
     Label::new(|data: &WorkerStateMonth, _env: &Env| format!("{} {}", data.name.0, data.name.1))
         .with_text_size(20.0)
         .padding(5.0)
         .center()
         .lens(lens::Id.map(
-            |d: &(WorkerStateMonth, Option<f32>)| d.0.clone(),
-            |d: &mut (WorkerStateMonth, Option<f32>), v: WorkerStateMonth| d.0 = v,
+            |d: &(WorkerStateMonth, Option<f64>)| d.0.clone(),
+            |d: &mut (WorkerStateMonth, Option<f64>), v: WorkerStateMonth| d.0 = v,
         ))
 }
 
-pub fn build_painter() -> Painter<(WorkerStateMonth, Option<f32>)> {
-    Painter::new(|ctx, data: &(WorkerStateMonth, Option<f32>), _env| {
+pub fn build_painter() -> Painter<(WorkerStateMonth, Option<f64>)> {
+    Painter::new(|ctx, data: &(WorkerStateMonth, Option<f64>), _env| {
         let bounds = ctx.size().to_rect().inset(-theme::STROKE_WIDTH / 2.0);
         let rounded = bounds.to_rounded_rect(theme::CORNER_RADIUS);
         if data.0.has_to_work.is_some()
@@ -35,7 +35,7 @@ pub fn build_painter() -> Painter<(WorkerStateMonth, Option<f32>)> {
     })
 }
 
-pub fn build_label_with_input<L: Lens<WorkerStateMonth, Option<f32>> + 'static>(
+pub fn build_label_with_input<L: Lens<WorkerStateMonth, Option<f64>> + 'static>(
     label: Label<WorkerStateMonth>,
     lens: L,
 ) -> impl Widget<WorkerStateMonth> {
