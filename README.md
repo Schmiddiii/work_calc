@@ -1,7 +1,7 @@
 # work_calc
 A program to calculate how much your workers have worked, had to worked and calculating overtime
 
-#Screenshot
+# Screenshot
 
 ![Screenshot](Screenshots/Work_Calc_Screenshot.png)
 
