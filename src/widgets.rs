@@ -18,20 +18,20 @@ pub fn ui_builder() -> impl Widget<WorkData> {
             Flex::row()
                 .with_flex_child(
                     Align::left(
-                        Button::new("<")
+                        Button::new("◀")
                             .on_click(|_, data: &mut WorkData, _| data.previous_month()),
                     ),
                     1.0,
                 )
-                .with_child(save_open::build_save_widget())
-                .with_child(save_open::build_open_widget())
-                .with_child(save_open::build_save_to_pdf_widget())
+                .with_child(save_open::build_save_widget().padding(2.5))
+                .with_child(save_open::build_open_widget().padding(2.5))
+                .with_child(save_open::build_save_to_pdf_widget().padding(2.5))
                 .with_flex_child(
                     Align::right(
-                        Button::new(">").on_click(|_, data: &mut WorkData, _| data.next_month()),
+                        Button::new("▶").on_click(|_, data: &mut WorkData, _| data.next_month()),
                     ),
                     1.0,
-                ),
+                ).padding(5.0),
         )
         .with_flex_child(
             Scroll::new(Flex::row().with_child(ui_month_overview())).vertical(),
@@ -45,7 +45,7 @@ pub fn ui_month_overview() -> impl Widget<WorkData> {
             .month
             .format(STR_MONTH_FORMAT)
             .to_string()
-    });
+    }).with_text_size(20.0).padding(10.0);
 
     let list = List::new(|| {
         Flex::column()
