@@ -22,12 +22,12 @@ const PDF_FONT_OFFSET_Y: f64 = 1.0;
 
 const CELL_SIZE_Y: f64 = 8.0;
 
-const CELL_SIZE_NAME_X: f64 = 63.0;
-const CELL_SIZE_HASTOWORK_X: f64 = 27.0;
-const CELL_SIZE_WORKED_X: f64 = 20.0;
-const CELL_SIZE_PAIDOUT_X: f64 = 20.0;
+const CELL_SIZE_NAME_X: f64 = 40.0;
+const CELL_SIZE_HASTOWORK_X: f64 = 30.0;
+const CELL_SIZE_WORKED_X: f64 = 30.0;
+const CELL_SIZE_PAIDOUT_X: f64 = 25.0;
 const CELL_SIZE_DELTA_X: f64 = 15.0;
-const CELL_SIZE_LASTMONTH_X: f64 = 25.0;
+const CELL_SIZE_LASTMONTH_X: f64 = 30.0;
 const CELL_SIZE_OVERALL_X: f64 = 20.0;
 
 pub fn write_to_pdf(data: &WorkData, path: &Path) {
