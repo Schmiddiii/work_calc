@@ -14,11 +14,12 @@ mod smallwidgets;
 mod states;
 mod strings;
 mod theme;
+mod translate;
 mod widgets;
 mod write_to_pdf;
 
 fn main() -> Result<(), PlatformError> {
-    let args:Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
 
     let work_data;
     if args.len() > 1 {

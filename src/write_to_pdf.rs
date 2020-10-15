@@ -8,6 +8,8 @@ use crate::strings::{
     STR_DELTA, STR_HAS_TO_WORK, STR_LAST_MONTH, STR_MONTH_FORMAT, STR_OVERALL, STR_PAID_OUT,
     STR_WORKED,
 };
+use crate::translate::translate;
+
 use chrono::NaiveDate;
 use std::fs::OpenOptions;
 
@@ -108,7 +110,7 @@ fn write_information_line(
     y: f64,
     font: &IndirectFontRef,
 ) {
-    let month_format = month.format(STR_MONTH_FORMAT).to_string();
+    let month_format = translate(month.format(STR_MONTH_FORMAT).to_string());
     write_box(
         month_format,
         layer,

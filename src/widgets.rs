@@ -10,6 +10,7 @@ use crate::strings::{
     STR_DELTA, STR_HAS_TO_WORK, STR_LAST_MONTH, STR_MONTH_FORMAT, STR_OVERALL, STR_PAID_OUT,
     STR_WORKED,
 };
+use crate::translate::translate;
 use crate::theme;
 
 pub fn ui_builder() -> impl Widget<WorkData> {
@@ -41,10 +42,10 @@ pub fn ui_builder() -> impl Widget<WorkData> {
 
 pub fn ui_month_overview() -> impl Widget<WorkData> {
     let month_label = Label::new(|data: &WorkData, _env: &Env| {
-        data.months[data.index]
+        translate(data.months[data.index]
             .month
             .format(STR_MONTH_FORMAT)
-            .to_string()
+            .to_string())
     }).with_text_size(20.0).padding(10.0);
 
     let list = List::new(|| {
