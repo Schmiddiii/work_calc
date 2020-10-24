@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 extern crate chrono;
 
 use druid::im::Vector;

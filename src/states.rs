@@ -70,6 +70,22 @@ impl WorkedMonth {
             new_worker_name: ("".to_string(), "".to_string()),
         }
     }
+    
+    pub fn create_previous_month(&self) -> WorkedMonth {
+        WorkedMonth {
+            month: Arc::new(NaiveDate::from_ymd(
+                self.month.year() - if self.month.month() == 1 { 1 } else { 0 },
+                (self.month.month() + 10) % 12 + 1,
+                1,
+            )),
+            workers: self
+                .workers
+                .iter()
+                .map(|w| WorkerStateMonth::new(w.name.clone()))
+                .collect(),
+            new_worker_name: ("".to_string(), "".to_string()),
+        }
+    }
 
     pub fn get_from_name(&self, name: Name) -> Option<WorkerStateMonth> {
         self.workers.clone().into_iter().find(|v| v.name == name)
@@ -80,6 +96,8 @@ impl WorkData {
     pub fn previous_month(&mut self) {
         if self.index > 0 {
             self.index = self.index - 1;
+        } else {
+            self.months.push_front(self.months[0].create_previous_month());
         }
     }
 
