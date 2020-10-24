@@ -18,9 +18,17 @@ A program to calculate how much your workers have worked, had to worked and calc
  Finally you will also notice "Save", "Open", "Save to PDF" in the header. 
  These will save your data as a .ron file, open your .ron files or write the data to a .pdf you can print afterwards.
  
+ # Features
+  * Add workers
+  * Editing "Worked", "Has to work" and "Paid out" from each worker for each month
+  * Automatic calculation for "Delta", "Last Month" and "Overall"
+  * Save to PDF
+  * Save a preview to PDF (for editing on paper)
+  * Save and restore from RON file
+  * Support for opening .ron files from file explorer (windows; must be set first)
+ 
  # Future features (maybe)
  * Opening the last file
- * Support for opening .ron files from file explorer
  
  # Disclaimer
  As druid, the GUI-Framework this program uses, is still in development, this program probably also has to be seen as "under development".
