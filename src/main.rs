@@ -34,7 +34,7 @@ fn main() -> Result<(), PlatformError> {
 
     AppLauncher::with_window(main_window)
         .use_simple_logger()
-        .delegate(save_open::Delegate)
+        .delegate(save_open::Delegate::default())
         .launch(work_data)
 }
 
