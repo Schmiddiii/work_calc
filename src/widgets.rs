@@ -27,6 +27,7 @@ pub fn ui_builder() -> impl Widget<WorkData> {
                 .with_child(save_open::build_save_widget().padding(2.5))
                 .with_child(save_open::build_open_widget().padding(2.5))
                 .with_child(save_open::build_save_to_pdf_widget().padding(2.5))
+                .with_child(save_open::build_save_template_to_pdf_widget().padding(2.5))
                 .with_flex_child(
                     Align::right(
                         Button::new("▶").on_click(|_, data: &mut WorkData, _| data.next_month()),

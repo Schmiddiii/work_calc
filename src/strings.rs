@@ -12,5 +12,6 @@ pub const STR_SUBMIT: &str = "Einfügen";
 pub const STR_OPEN_RON: &str = "Öffnen";
 pub const STR_SAVE_RON: &str = "Speichern";
 pub const STR_SAVE_PDF: &str = "Als PDF speichern";
+pub const STR_SAVE_PDF_TEMPLATE: &str = "Speichere Vorlage als PDF";
 
 pub const STR_MONTH_FORMAT: &str = "%B %Y";

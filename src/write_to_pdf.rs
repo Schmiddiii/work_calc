@@ -81,6 +81,56 @@ pub fn write_to_pdf(data: &WorkData, path: &Path) {
     .unwrap();
 }
 
+pub fn write_template_to_pdf(data: &WorkData, path: &Path) {
+    let (doc, page1, layer1) = PdfDocument::new("Title", Mm(PDF_WIDTH), Mm(PDF_HEIGHT), "");
+
+    let font = doc
+        .add_builtin_font(BuiltinFont::TimesRoman)
+        .expect("Cannot load font");
+
+    let workers_per_page = ((PDF_HEIGHT - 2.0 * PDF_PADDING_Y) / (2.0 * CELL_SIZE_Y)) as usize;
+    let num_pages =
+        (data.months[data.index].workers.len() as f64 / workers_per_page as f64).ceil() as usize;
+
+    let mut layers: Vec<PdfLayerReference> = vec![];
+    layers.push(doc.get_page(page1).get_layer(layer1));
+
+    for i in 1..num_pages {
+        let (page, layer) = doc.add_page(
+            Mm(PDF_WIDTH),
+            Mm(PDF_HEIGHT),
+            format!("Page {}, Layer 1", i),
+        );
+        layers.push(doc.get_page(page).get_layer(layer));
+    }
+
+    data.months[data.index]
+        .workers
+        .iter()
+        .enumerate()
+        .for_each(|(n, w)| {
+            write_template_single_worker(
+                w,
+                (*data).get_overall_from_name_previous(w.clone().name),
+                *data.months[data.index].month,
+                &layers[(n / workers_per_page) as usize],
+                2 * (n % workers_per_page),
+                &font,
+            )
+        });
+
+    doc.save(&mut BufWriter::new(
+        OpenOptions::new()
+            .read(false)
+            .write(true)
+            .create(true)
+            .open(path)
+            .unwrap(),
+    ))
+    .unwrap();
+    
+}
+
 fn write_single_worker(
     data: &WorkerStateMonth,
     last_month: Option<f64>,
@@ -103,6 +153,30 @@ fn write_single_worker(
         font,
     );
 }
+
+fn write_template_single_worker(
+    data: &WorkerStateMonth,
+    last_month: Option<f64>,
+    month: NaiveDate,
+    layer: &PdfLayerReference,
+    number: usize,
+    font: &IndirectFontRef,
+) {
+    write_information_line(
+        month,
+        layer,
+        PDF_HEIGHT - PDF_PADDING_Y - (number as f64) * CELL_SIZE_Y,
+        font,
+    );
+    write_template_data_line(
+        data,
+        last_month,
+        layer,
+        PDF_HEIGHT - PDF_PADDING_Y - (1.0 + number as f64) * CELL_SIZE_Y,
+        font,
+    );
+}
+
 
 fn write_information_line(
     month: NaiveDate,
@@ -279,6 +353,95 @@ fn write_data_line(
         font,
     );
 }
+
+fn write_template_data_line(
+    data: &WorkerStateMonth,
+    last_month: Option<f64>,
+    layer: &PdfLayerReference,
+    y: f64,
+    font: &IndirectFontRef,
+) {
+    let name_format = format!("{} {}", data.name.0, data.name.1);
+    write_box(
+        name_format,
+        layer,
+        PDF_PADDING_X,
+        y,
+        CELL_SIZE_NAME_X,
+        CELL_SIZE_Y,
+        font,
+    );
+    write_box(
+        "",
+        layer,
+        PDF_PADDING_X + CELL_SIZE_NAME_X,
+        y,
+        CELL_SIZE_HASTOWORK_X,
+        CELL_SIZE_Y,
+        font,
+    );
+    write_box(
+        "",
+        layer,
+        PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X,
+        y,
+        CELL_SIZE_WORKED_X,
+        CELL_SIZE_Y,
+        font,
+    );
+    write_box(
+        "",
+        layer,
+        PDF_PADDING_X + CELL_SIZE_NAME_X + CELL_SIZE_HASTOWORK_X + CELL_SIZE_WORKED_X,
+        y,
+        CELL_SIZE_PAIDOUT_X,
+        CELL_SIZE_Y,
+        font,
+    );
+    write_box(
+        "",
+        layer,
+        PDF_PADDING_X
+            + CELL_SIZE_NAME_X
+            + CELL_SIZE_HASTOWORK_X
+            + CELL_SIZE_WORKED_X
+            + CELL_SIZE_PAIDOUT_X,
+        y,
+        CELL_SIZE_DELTA_X,
+        CELL_SIZE_Y,
+        font,
+    );
+    write_box(
+        last_month.unwrap_or(0.0).to_string(),
+        layer,
+        PDF_PADDING_X
+            + CELL_SIZE_NAME_X
+            + CELL_SIZE_HASTOWORK_X
+            + CELL_SIZE_WORKED_X
+            + CELL_SIZE_PAIDOUT_X
+            + CELL_SIZE_DELTA_X,
+        y,
+        CELL_SIZE_LASTMONTH_X,
+        CELL_SIZE_Y,
+        font,
+    );
+    write_box(
+        "",
+        layer,
+        PDF_PADDING_X
+            + CELL_SIZE_NAME_X
+            + CELL_SIZE_HASTOWORK_X
+            + CELL_SIZE_WORKED_X
+            + CELL_SIZE_PAIDOUT_X
+            + CELL_SIZE_DELTA_X
+            + CELL_SIZE_LASTMONTH_X,
+        y,
+        CELL_SIZE_OVERALL_X,
+        CELL_SIZE_Y,
+        font,
+    );
+}
+
 
 fn write_box<S: Into<String>>(
     str: S,
