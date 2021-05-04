@@ -1,3 +1,5 @@
+**This repository is archived because of a lack of interest**
+
 # work_calc
 A program to calculate how much your workers have worked, had to worked and calculating overtime
 
